@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          Role
+  created_at    DateTime @default(now())
+
+  contents      Content[] @relation("TeacherContent")
+  approvals     Content[] @relation("PrincipalApproval")
+}
+
+model Content {
+  id               Int       @id @default(autoincrement())
+  title            String
+  description      String?
+  subject          String
+  file_path        String
+  file_type        String
+  file_size        Int
+
+  status           ContentStatus @default(PENDING)
+  rejection_reason String?
+
+  start_time       DateTime?
+  end_time         DateTime?
+
+  uploaded_by      Int
+  teacher          User @relation("TeacherContent", fields: [uploaded_by], references: [id])
+
+  approved_by      Int?
+  principal        User? @relation("PrincipalApproval", fields: [approved_by], references: [id])
+
+  approved_at      DateTime?
+
+  schedules        ContentSchedule[]
+
+  created_at       DateTime @default(now())
+}
+
+model ContentSchedule {
+  id             Int      @id @default(autoincrement())
+  content_id     Int
+  subject        String
+  rotation_order Int
+  duration       Int
+  start_time     DateTime?
+  end_time       DateTime?
+
+  content        Content  @relation(fields: [content_id], references: [id])
+  created_at     DateTime @default(now())
+}
+
+
+enum Role {
+  TEACHER
+  PRINCIPAL
+}
+
+enum ContentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
